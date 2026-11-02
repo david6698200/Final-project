@@ -13,8 +13,11 @@ public class Main {
     public static void main(String[] args) throws IOException {
         int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
 
+        BugService service = new BugService(new InMemoryBugRepository());
+
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/health", Main::handleHealth);
+        server.createContext("/bugs", new BugHandler(service));
         server.start();
 
         System.out.println("Bug tracker listening on port " + port);
