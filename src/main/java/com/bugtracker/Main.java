@@ -15,7 +15,15 @@ public class Main {
 
         BugRepository repository =
                 new DynamoBugRepository(AwsConfig.dynamoDb(), AwsConfig.BUGS_TABLE);
-        BugService service = new BugService(repository);
+        BugEventPublisher publisher =
+                new SqsBugEventPublisher(AwsConfig.sqs(), AwsConfig.QUEUE_NAME);
+        BugService service = new BugService(repository, publisher);
+
+        Thread worker = new Thread(
+                new BugEventWorker(AwsConfig.sqs(), AwsConfig.QUEUE_NAME, service),
+                "bug-event-worker");
+        worker.setDaemon(true);
+        worker.start();
 
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/health", Main::handleHealth);

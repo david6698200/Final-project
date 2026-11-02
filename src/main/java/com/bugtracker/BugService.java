@@ -8,9 +8,15 @@ import java.util.UUID;
 public class BugService {
 
     private final BugRepository repository;
+    private final BugEventPublisher publisher;
 
     public BugService(BugRepository repository) {
+        this(repository, bugId -> { });
+    }
+
+    public BugService(BugRepository repository, BugEventPublisher publisher) {
         this.repository = repository;
+        this.publisher = publisher;
     }
 
     public Bug create(String title, String description, String severity) {
@@ -29,6 +35,12 @@ public class BugService {
                 Instant.now().toString());
 
         repository.save(bug);
+
+        try {
+            publisher.publishBugCreated(bug.getId());
+        } catch (RuntimeException e) {
+            System.err.println("Failed to publish event for bug " + bug.getId() + ": " + e.getMessage());
+        }
         return bug;
     }
 
@@ -47,6 +59,13 @@ public class BugService {
         Bug.Status parsedStatus = parseStatus(status);
         Bug bug = get(id);
         bug.setStatus(parsedStatus);
+        repository.save(bug);
+        return bug;
+    }
+
+    public Bug markNotified(String id) {
+        Bug bug = get(id);
+        bug.setNotified(true);
         repository.save(bug);
         return bug;
     }
