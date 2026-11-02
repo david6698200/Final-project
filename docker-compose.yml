@@ -1,0 +1,9 @@
+services:
+  localstack:
+    image: localstack/localstack:3.8
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=dynamodb,sqs
+    volumes:
+      - ./localstack/init:/etc/localstack/init/ready.d
